@@ -3,6 +3,7 @@ from pre_processor import pre_process
 from data_load import index_decode
 from queue import PriorityQueue
 from math import log
+from time import time
 
 MAX_SIZE = 20
 
@@ -121,10 +122,12 @@ def ranking(manager, documents, sub_index, rank_method, query_tokens):
 
 def query_processing(query, manager, results, rank_method):
 
+    time_start = time()
     query_tokens = pre_process(query)
 
     sub_index = index_decode(manager.index, manager.lexic, query_tokens)
 
+    match_begin = time()
     common_docs = set()
     for pos, key in enumerate(sub_index.keys()):
         docs = [i[0] for i in sub_index[key]]
@@ -143,11 +146,18 @@ def query_processing(query, manager, results, rank_method):
         docs = [i[0] for i in sub_index[key]]
         docids.update(docs)
 
+    begin_daat = time()
     daat_result = daat(sub_index, query_tokens, common_docs)
+    # print(f'{query} daat ran for: {time()-begin_daat}')
+    # print(f'{query} matching ran for: {time()-match_begin}')
 
+    begin_rank = time()
     rank = ranking(manager, daat_result, sub_index, rank_method, query_tokens)
+    # print(f'{query} rank ran for: {time() - begin_rank}')
 
     results.append((query, rank))
+
+    print('Thread for ', query, ' ran in: ', time()-time_start, 'seconds')
 
 
 def multi_processing(index, lexic, doc_info, queries, rank_method):
